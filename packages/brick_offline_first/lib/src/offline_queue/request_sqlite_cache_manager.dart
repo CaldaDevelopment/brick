@@ -1,6 +1,8 @@
 import 'package:brick_offline_first/src/offline_queue/request_sqlite_cache.dart';
 import 'package:meta/meta.dart';
-import 'package:sqflite_common/sqlite_api.dart' show Database, DatabaseExecutor, DatabaseFactory;
+import 'package:sqflite_common/sqlite_api.dart'
+    show Database, DatabaseExecutor, DatabaseFactory;
+import 'package:sqflite/utils/utils.dart' as sqflite;
 
 /// Fetch and delete [RequestSqliteCache]s.
 abstract class RequestSqliteCacheManager<RequestMethod> {
@@ -93,14 +95,16 @@ abstract class RequestSqliteCacheManager<RequestMethod> {
   /// This method also locks the row to make it idempotent to subsequent processing.
   Future<RequestMethod?> prepareNextRequestToProcess() async {
     final db = await getDb();
-    final unprocessedRequests = await db.transaction<List<Map<String, dynamic>>>((txn) async {
+    final unprocessedRequests =
+        await db.transaction<List<Map<String, dynamic>>>((txn) async {
       final latestLockedRequests = await _latestRequest(txn, whereLocked: true);
 
       if (latestLockedRequests.isNotEmpty) {
         // ensure that if the request is longer the 2 minutes old it's unlocked automatically
-        final lastUpdated =
-            DateTime.fromMillisecondsSinceEpoch(latestLockedRequests.first[updateAtColumn]);
-        final twoMinutesAgo = DateTime.now().subtract(const Duration(minutes: 2));
+        final lastUpdated = DateTime.fromMillisecondsSinceEpoch(
+            latestLockedRequests.first[updateAtColumn]);
+        final twoMinutesAgo =
+            DateTime.now().subtract(const Duration(minutes: 2));
         if (lastUpdated.isBefore(twoMinutesAgo)) {
           await RequestSqliteCache.unlockRequest(
             data: latestLockedRequests.first,
@@ -143,8 +147,8 @@ abstract class RequestSqliteCacheManager<RequestMethod> {
   }) async {
     /// Ensure that a request that's immediately attempted and stored is not immediately
     /// reattempted by the queue interval before an HTTP response is received.
-    final nowMinusNextPoll =
-        DateTime.now().millisecondsSinceEpoch - processingInterval.inMilliseconds;
+    final nowMinusNextPoll = DateTime.now().millisecondsSinceEpoch -
+        processingInterval.inMilliseconds;
 
     return await txn.query(
       tableName,
@@ -165,7 +169,8 @@ abstract class RequestSqliteCacheManager<RequestMethod> {
   /// When [onlyLocked] is `true`, only jobs that are not actively being processed are returned.
   /// Accessing this sublist can be useful for deleting a job blocking the queue.
   /// Defaults `false`.
-  Future<List<Map<String, dynamic>>> unprocessedRequests({bool onlyLocked = false}) async {
+  Future<List<Map<String, dynamic>>> unprocessedRequests(
+      {bool onlyLocked = false}) async {
     final db = await getDb();
 
     if (onlyLocked) {
@@ -185,7 +190,6 @@ abstract class RequestSqliteCacheManager<RequestMethod> {
     );
   }
 
-  
   /// Returns all requests in the database.
   Future<List<Map<String, dynamic>>> getAllRequests() async {
     final db = await getDb();
