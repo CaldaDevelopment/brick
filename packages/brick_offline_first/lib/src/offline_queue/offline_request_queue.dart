@@ -70,4 +70,32 @@ abstract class OfflineRequestQueue<TRequest> {
   /// Send the next available request through the remote interface
   /// such as an HTTP client.
   Future<void> transmitRequest(TRequest request);
+
+  
+  /// Print and return the contents of the offline request queue
+  Future<String> printQueueContents() async {
+    final requests = await requestManager.getAllRequests();
+    if (requests.isEmpty) {
+      const message = 'Offline request queue is empty.';
+      print(message);
+      return message;
+    }
+
+    final requestsString = requests.map((e) => e.toString()).join("\n");
+    print('Offline request queue contents:\n$requestsString');
+
+    return requestsString;
+  }
+
+  // Check if the queue is empty
+  Future<bool> isEmpty() async {
+    final requests = await requestManager.getAllRequests();
+    return requests.isEmpty;
+  }
+
+  // Return the number of requests in the queue
+  Future<int> getQueueLength() async {
+    final requests = await requestManager.getAllRequests();
+    return requests.length;
+  }
 }
