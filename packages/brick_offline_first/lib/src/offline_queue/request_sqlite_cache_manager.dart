@@ -184,4 +184,23 @@ abstract class RequestSqliteCacheManager<RequestMethod> {
       orderBy: orderByStatement,
     );
   }
+
+  
+  /// Returns all requests in the database.
+  Future<List<Map<String, dynamic>>> getAllRequests() async {
+    final db = await getDb();
+    return await db.query(
+      tableName,
+      distinct: true,
+      orderBy: orderByStatement,
+    );
+  }
+
+  /// Checks if the request queue is empty.
+  Future<bool> isEmpty() async {
+    final db = await getDb();
+    final count = sqflite
+        .firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM $tableName'));
+    return count == 0;
+  }
 }
